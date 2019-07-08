@@ -1,0 +1,7 @@
+test
+librocksdb.a
+test_multiget
+test_tailing
+main
+c_simple_example
+
