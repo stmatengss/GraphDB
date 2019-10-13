@@ -1,7 +1,11 @@
 #if !defined(GRAPHDB_HPP_)
 #define GRAPHDB_HPP_
 
+#include <vector>
+#include <function>
+
 #include "rocksdb_api.h"
+#include "core/storage/graph_schema.hpp"
 
 namespace graphdb 
 {
@@ -11,17 +15,19 @@ namespace graphdb
     private:
         rocksdb::DB* db;
         rocksdb::Options options;
-        /* data */
+
+        // meta-data
+        std::string db_path;
 
     public:
-        graphdb(std::string db_path) { 
-            // create_if_not_exist(db_path);
+        graphdb(std::string db_path_): dp_path(db_path_) { 
+            create_db_if_not_exist(db_path);
         }
         ~graphdb() { 
-
+            close_db();
         }
         
-        void create_if_not_exist(std::string db_path) {
+        void create_db_if_not_exist(std::string db_path) {
             // Optimize RocksDB. This is the easiest way to get RocksDB to perform well
             options.IncreaseParallelism();
             options.OptimizeLevelStyleCompaction();
@@ -30,6 +36,10 @@ namespace graphdb
               // open DB
             rocksdb::Status s = rocksdb::DB::Open(options, db_path, &db);
             assert(s.ok());
+        }
+
+        void close_db() {
+            delete db;
         }
 
         /*
@@ -46,9 +56,40 @@ namespace graphdb
         record the reached vertex in an in-memory heap and flush to the disk if it reach a certain limitation
         the result will be multiple ordered list of reached vertex and can be merged in one pass
         */
-       void explore_scan() {
+        bool explore_scan(std::vector &vec_sorted, 
+                        funtional<bool(vertex_table_item)> src_v_filter,
+                        funtional<bool(conn_table_item)> edge_filter) {
+           if (src_v_filter != nullptr) {
 
-       }  
+           }
+        
+           if (edge_filter != nullptr) {
+
+           }
+
+           return true;
+        }
+
+        /*
+        BFS()
+        Input:
+        1:Required: an ordered list of source vertex list
+        2:Optional: a description of the filter conditions
+        3:Optional: visit the vertex for only once or multiple times
+        Output:
+        1:Required: extracted readed source vertex
+        Implementaion:
+        based on ExploreScan()
+        can be down in only a few (the same number as the depth of BFS) passes of the data
+        */
+
+        bool bfs(std::vector &vec_sorted,
+                funtional<bool(vertex_table_item)> src_v_filter,
+                funtional<bool(conn_table_item)> edge_filter,
+                int bfs_total_times) {
+
+            return true;
+        }
     };
 }
 
