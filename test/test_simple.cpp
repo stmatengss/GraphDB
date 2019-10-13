@@ -2,9 +2,7 @@
 #include <string>
 #include <iostream>
 
-#include "rocksdb/db.h"
-#include "rocksdb/slice.h"
-#include "rocksdb/options.h"
+#include "rocksdb_api.h"
 
 using namespace rocksdb;
 

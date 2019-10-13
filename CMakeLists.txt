@@ -13,11 +13,17 @@ set(MICRO_TEST_LIST
     )
 
 set(TEST_LIST
-    test
+    test_simple
+    test_strawman_join
+    test_graphdb
     )
 
 include_directories(
-    include/*)
+    src
+    src/core
+    )
+
+    #../rocksdb/include
 
 # add_library(${staticlib}
 #     ${CMAKE_SOURCE_DIR}/lib/librocksdb.a)
@@ -27,12 +33,14 @@ set(mylib
     stdc++
     snappy
     bz2 
-    lz4
     z
     m
     pthread
+    dl
     zstd)
 
+    #    lz4
+#
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY bin/micro-test/)
 
 foreach (TEST_NAME IN LISTS MICRO_TEST_LIST)
