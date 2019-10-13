@@ -5,7 +5,7 @@ set(CMAKE_C_COMPILER "gcc")
 set(CMAKE_CXX_COMPILER "g++")
 
 set(CMAKE_C_FLAGS "-Wall -g -O0 -I./include ")
-set(CMAKE_CXX_FLAGS "-g -O0 -std=c++11 -I./include")
+set(CMAKE_CXX_FLAGS "-g -O0 -std=c++14 -I./include")
 
 set(MICRO_TEST_LIST
     test_multiget
