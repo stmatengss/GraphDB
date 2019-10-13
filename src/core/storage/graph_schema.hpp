@@ -2,6 +2,7 @@
 #define GRAPH_SCHEMA_HPP_
 
 #include <cstdint>
+#include <string>
 #include "core/utils.h"
 
 /*
@@ -27,6 +28,9 @@ Edge Table:
     ID: 64 bits
 */
 
+namespace graphdb
+{
+    
 typedef uint64_t ide_t;
 typedef uint16_t type_t;
 
@@ -50,23 +54,29 @@ struct rocksdb_value
 };
 
 /* Vertex Table */
+// [Source Vertex Type ID][Source Vertex ID][Property Type ID] -> 
 
 struct packed vertex_table_item_key: rocksdb_key
 {
     type_t src_v_type;
     ide_t src_v_id;
     type_t p_type;
+    vertex_table_item_key(type_t src_v_type_, ide_t src_v_id_, 
+        type_t p_type_): src_v_type(src_v_type_), src_v_id(src_v_id_), p_type(p_type_){}
 };
 
-struct packed vertex_table_item_value: rocksdb_value
+struct vertex_table_item_value: rocksdb_value
 {
-
+    std::string json_str;
+    vertex_table_item_value(std::string json_str_): json_str(json_str_) {}
 };
 
 struct vertex_table_item
 {
     vertex_table_item_key key;
     vertex_table_item_value value;
+    vertex_table_item(vertex_table_item_key key_,
+        vertex_table_item_value value_): key(key_), value(value_) {}
 };
 
 /* Conn Table */
@@ -82,9 +92,9 @@ struct packed conn_table_item_key: rocksdb_key
     ide_t e_id;
 };
 
-struct packed conn_table_item_value: rocksdb_value
+struct conn_table_item_value: rocksdb_value
 {
-
+    std::string json_str;
 };
 
 struct conn_table_item
@@ -118,7 +128,14 @@ struct edge_table_item
 
 template<typename T>
 char *struct_to_char(T *st) {
-    reinterpret_cast<char*>(st);
+    return reinterpret_cast<char*>(st);
 }
+
+template<typename T>
+std::string struct_to_string(T *st) {
+    return std::string(reinterpret_cast<char*>(st));
+}
+
+} // graphdb
 
 #endif // GRAPH_SCHEMA_HPP_
