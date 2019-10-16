@@ -4,8 +4,8 @@
 #include <vector>
 #include <functional>
 
-#include "rocksdb_api.h"
 #include "core/common.h"
+#include "core/rocksdb_wrapper.hpp"
 #include "core/storage/graph_schema.hpp"
 
 namespace graphdb 
@@ -14,36 +14,19 @@ namespace graphdb
 class graphdb 
 {
 private:
-    rocksdb::DB* db;
-    rocksdb::Options options;
+    rocksdb_wrapper *db_ins;
 
     // meta-data
-    std::string db_path;
 
 public:
-    graphdb(std::string db_path_): db_path(db_path_) { 
-        create_db_if_not_exist(db_path);
+    graphdb(std::string db_path) { 
+        db_ins = new rocksdb_wrapper(db_path);
     }
     ~graphdb() { 
-        close_db();
+        delete db_ins;
     }
     
     /*  */
-
-    void create_db_if_not_exist(std::string db_path) {
-        // Optimize RocksDB. This is the easiest way to get RocksDB to perform well
-        options.IncreaseParallelism();
-        options.OptimizeLevelStyleCompaction();
-        // create the DB if it's not already present
-        options.create_if_missing = true;
-            // open DB
-        rocksdb::Status s = rocksdb::DB::Open(options, db_path, &db);
-        assert(s.ok());
-    }
-
-    void close_db() {
-        delete db;
-    }
 
     /*
     InsertNewVertex()
@@ -58,7 +41,7 @@ public:
     Refer to the Set API in rocksdb
     */
     ret_status insert_new_vertex(type_t src_v_type, ide_t src_v_id, type_t p_type, std::string json_str) {
-        assert(db != nullptr);
+        assert(db_ins != nullptr);
         
         vertex_table_item v_item(vertex_table_item_key(src_v_type, src_v_id, p_type), vertex_table_item_value(json_str));
         insert_new_vertex(&v_item);
@@ -76,11 +59,51 @@ public:
     Refer to the Set API in rocksdb
     */
     ret_status insert_new_vertex(vertex_table_item *v_item) {
-        assert(db != nullptr);
+        assert(db_ins != nullptr);
         // rocksdb::WriteOptions wo();
-        rocksdb::WriteOptions wo = rocksdb::WriteOptions();
-        rocksdb::Status s = db->Put(wo, struct_to_string<vertex_table_item_key>(&v_item->key), 
+        
+        db_status s = db_ins->Put(struct_to_string<vertex_table_item_key>(&v_item->key), 
                                 struct_to_string<vertex_table_item_value>(&v_item->value));
+        assert(s.ok());
+        return ret_status::succeed;
+    } 
+    /*
+    InsertNewConn()
+    Input:
+    1:Required: Source Vertex Type ID
+    2.Required: Source Vertex ID
+    3.Required: Property Type ID
+    4.Required: Json String
+    Output:
+    1:succeed or failed
+    Implementation:
+    Refer to the Set API in rocksdb
+    */
+    ret_status insert_new_conn(type_t src_v_type,
+    ide_t src_v_id, type_t e_type, type_t dst_v_type, ide_t dst_v_id,  ide_t e_id, std::string json_str) {
+        assert(db_ins != nullptr);
+        
+        conn_table_item v_item(conn_table_item_key(src_v_type, src_v_id, e_type, dst_v_type, dst_v_id, e_id), conn_table_item_value(json_str));
+        insert_new_conn(&v_item);
+
+        return ret_status::succeed;
+    }
+    
+    /*
+    InsertNewConn()
+    Input:
+    1:Required: vertex 
+    Output:
+    1:succeed or failed
+    Implementation:
+    Refer to the Set API in rocksdb
+    */
+    ret_status insert_new_conn(conn_table_item *conn_item) {
+        assert(db_ins != nullptr);
+        // rocksdb::WriteOptions wo();
+        
+        db_status s = db_ins->Put(struct_to_string<conn_table_item_key>(&conn_item->key), 
+                                struct_to_string<conn_table_item_value>(&conn_item->value));
         assert(s.ok());
         return ret_status::succeed;
     }
@@ -105,6 +128,9 @@ public:
                     std::vector<ide_t> &src_v_vec_out,
                     bool ouput_dst_vec,
                     std::vector<ide_t> &dst_v_vec_out) {
+        
+
+
         if (src_v_filter != nullptr) {
 
         }

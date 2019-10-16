@@ -90,17 +90,22 @@ struct packed conn_table_item_key: rocksdb_key
     type_t dst_v_type;
     ide_t dst_v_id;
     ide_t e_id;
+    conn_table_item_key(type_t src_v_type_,
+    ide_t src_v_id_, type_t e_type_, type_t dst_v_type_, ide_t dst_v_id_,  ide_t e_id_): src_v_type(src_v_type_), src_v_id(src_v_id_), e_type(e_type_), dst_v_type(dst_v_type_), dst_v_id(dst_v_id_), e_id(e_id_) {}
 };
 
 struct conn_table_item_value: rocksdb_value
 {
     std::string json_str;
+    conn_table_item_value(std::string json_str_): json_str(json_str_) {}
 };
 
 struct conn_table_item
 {
     conn_table_item_key key;
     conn_table_item_value value;
+    conn_table_item(conn_table_item_key key_,
+        conn_table_item_value value_): key(key_), value(value_) {}
 };
 
 /* Edge Table */
