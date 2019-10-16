@@ -3,6 +3,8 @@
 
 #include <cstdint>
 #include <string>
+#include <cstddef>
+
 #include "core/utils.h"
 
 /*
@@ -53,6 +55,16 @@ struct rocksdb_value
 
 };
 
+struct packed vertex_t{
+    type_t src_type;
+    ide_t src_id;
+};
+
+struct packed edge_t{
+    type_t edge_type;
+    ide_t edge_id;
+};
+
 /* Vertex Table */
 // [Source Vertex Type ID][Source Vertex ID][Property Type ID] -> 
 
@@ -73,10 +85,10 @@ struct vertex_table_item_value: rocksdb_value
 
 struct vertex_table_item
 {
-    vertex_table_item_key key;
-    vertex_table_item_value value;
-    vertex_table_item(vertex_table_item_key key_,
-        vertex_table_item_value value_): key(key_), value(value_) {}
+    vertex_table_item_key *key;
+    vertex_table_item_value *value;
+    vertex_table_item(vertex_table_item_key *key_,
+        vertex_table_item_value *value_): key(key_), value(value_) {}
 };
 
 /* Conn Table */
@@ -102,11 +114,13 @@ struct conn_table_item_value: rocksdb_value
 
 struct conn_table_item
 {
-    conn_table_item_key key;
-    conn_table_item_value value;
-    conn_table_item(conn_table_item_key key_,
-        conn_table_item_value value_): key(key_), value(value_) {}
+    conn_table_item_key *key;
+    conn_table_item_value *value;
+    conn_table_item(conn_table_item_key *key_,
+        conn_table_item_value *value_): key(key_), value(value_) {}
 };
+
+const int dst_v_id_offset = offsetof(conn_table_item_key, dst_v_id);
 
 /* Edge Table */
 // [Edge Type ID][Edge ID] -> [Source Vertex Type ID][Source Vertex ID][Destination Vertex Type ID][Destination Vertex ID]
@@ -115,6 +129,7 @@ struct packed edge_table_item_key: rocksdb_key
 {
     type_t e_type;
     ide_t e_id;
+    edge_table_item_key(type_t e_type_, ide_t e_id_): e_type(e_type_), e_id(e_id_) {}
 };
 
 struct packed edge_table_item_value: rocksdb_value
@@ -123,12 +138,15 @@ struct packed edge_table_item_value: rocksdb_value
     ide_t src_v_id;
     type_t dst_v_type;
     ide_t dst_v_id;
+    edge_table_item_value(type_t src_v_type_,
+    ide_t src_v_id_, type_t dst_v_type_, ide_t dst_v_id_): src_v_type(src_v_type_), src_v_id(src_v_id_), dst_v_type(dst_v_type_), dst_v_id(dst_v_id_) {}
 };
 
 struct edge_table_item
 {
-    edge_table_item_key key;
-    edge_table_item_value value;
+    edge_table_item_key *key;
+    edge_table_item_value *value;
+    edge_table_item(edge_table_item_key *key_, edge_table_item_value *value_): key(key_), value(value_) {}
 };
 
 template<typename T>
@@ -138,7 +156,8 @@ char *struct_to_char(T *st) {
 
 template<typename T>
 std::string struct_to_string(T *st) {
-    return std::string(reinterpret_cast<char*>(st));
+    size_t size = sizeof(T);
+    return std::string(reinterpret_cast<char*>(st), size);
 }
 
 } // graphdb

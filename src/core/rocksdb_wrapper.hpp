@@ -3,7 +3,10 @@
 
 #include <vector>
 #include <cstdint>
+#include <cstring>
+#include <iostream>
 
+#include "utils.h"
 #include "rocksdb_api.h"
 
 using namespace rocksdb;
@@ -18,17 +21,29 @@ private:
     std::string db_path;
 
 private:
-    std::vector<Iterator *> MultiSeek(std::vector<uint64_t> src_v_vec) {
-        // Fake MultiSeek
-        std::vector<Iterator *> begin_pos_vec;
+    template<typename T>
+    void multi_seek_t(std::vector<T> &src_v_vec, std::vector<Iterator *> &begin_pos_vec) {
         ReadOptions option = ReadOptions();  
 
-        for(uint64_t &src_v: src_v_vec) {
+        for(T &src_v: src_v_vec) {
+
             Iterator *it = db->NewIterator(option);
             it->Seek(std::string(reinterpret_cast<char *>(&src_v)));
-            begin_pos_vec.push_back(it);
+            begin_pos_vec.emplace_back(it);
         }    
         return begin_pos_vec;
+    }
+
+    void multi_seek(std::vector<std::string> &src_v_vec_str, std::vector<Iterator *> &begin_pos_vec) {
+        // Fake MultiSeek
+        ReadOptions option = ReadOptions();  
+
+        for(auto src_v_str: src_v_vec_str) {
+            Iterator *it = db->NewIterator(option);
+
+            it->Seek(src_v_str);
+            begin_pos_vec.emplace_back(it);
+        }    
     }
 
 public:
@@ -54,8 +69,74 @@ public:
     }
 
     db_status Put(std::string key, std::string value) {
+
         WriteOptions wo = WriteOptions();
+
         return db->Put(wo, key, value);
+    }
+
+    Iterator *Seek(std::string key) {
+
+        ReadOptions option = ReadOptions();  
+        Iterator *it = db->NewIterator(option);
+        it->Seek(key);
+        return it;
+    }
+
+    void explore_impl(std::vector<std::string> &v_vec_str, std::vector<std::pair<std::string, std::string>> &explore_edges, std::vector<int> explore_edges_len) {
+        int counter;
+        std::vector<Iterator *> seek_res;
+        multi_seek(v_vec_str, seek_res);
+        
+        int i = 0;
+        for (auto &it_res: seek_res) {
+            
+            if (!it_res->Valid()) {
+                continue;
+            }
+
+            for(; it_res->Valid(); it_res->Next()) {
+                std::string key_str = it_res->key().ToString();
+                std::string val_str = it_res->value().ToString();
+                if (key_str.compare(0, v_vec_str[i].length(), v_vec_str[i]) == 0) {
+                    explore_edges.emplace_back(make_pair(key_str, val_str));
+                    counter ++;
+                } else {
+                    explore_edges_len.emplace_back(counter);
+                    counter = 0;
+                    break;
+                }
+            }
+            i ++;
+        }
+        explore_edges_len.emplace_back(counter);
+    }
+
+    void explore_impl(std::vector<std::string> v_vec_str, std::vector<std::pair<std::string, std::string>> &explore_edges) {
+
+        std::vector<Iterator *> seek_res;
+        multi_seek(v_vec_str, seek_res);
+        
+        int i = 0;
+        for (auto &it_res: seek_res) {       
+
+            if (!it_res->Valid()) {
+                continue;
+            }
+
+            for(; it_res->Valid(); it_res->Next()) {
+                std::string key_str = it_res->key().ToString();
+                std::string val_str = it_res->value().ToString();
+
+                if (key_str.compare(0, v_vec_str[i].length(), v_vec_str[i]) == 0) {
+
+                    explore_edges.emplace_back(make_pair(key_str, val_str));
+                } else {
+                    break;
+                }
+            }
+            i ++;
+        }
     }
 
 };

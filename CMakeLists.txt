@@ -37,10 +37,9 @@ set(mylib
     m
     pthread
     dl
+    gtest
     zstd)
 
-    #    lz4
-#
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY bin/micro-test/)
 
 foreach (TEST_NAME IN LISTS MICRO_TEST_LIST)
