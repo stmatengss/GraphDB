@@ -4,6 +4,7 @@
 #include <vector>
 #include <cstdint>
 #include <cstring>
+#include <chrono>
 #include <iostream>
 
 #include "utils.h"
@@ -11,6 +12,8 @@
 
 using namespace rocksdb;
 using db_status = Status;
+
+#define USE_BENCH
 
 class rocksdb_wrapper
 {
@@ -115,8 +118,17 @@ public:
     void explore_impl(std::vector<std::string> v_vec_str, std::vector<std::pair<std::string, std::string>> &explore_edges) {
 
         std::vector<Iterator *> seek_res;
+
+#ifdef USE_BENCH
+        auto begin = std::chrono::system_clock::now();
+#endif
         multi_seek(v_vec_str, seek_res);
-        
+#ifdef USE_BENCH
+        auto end = std::chrono::system_clock::now();
+        std::chrono::duration<double> diff = end - begin;
+        std::cout << "Multi Seek Time:" << diff.count() << std::endl;
+#endif   
+
         int i = 0;
         for (auto &it_res: seek_res) {       
 

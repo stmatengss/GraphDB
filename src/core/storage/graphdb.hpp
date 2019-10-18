@@ -3,6 +3,7 @@
 
 #include <vector>
 #include <set>
+#include <chrono>
 #include <functional>
 
 #include "core/common.h"
@@ -27,7 +28,12 @@ public:
         delete db_ins;
     }
     
-    /*  */
+    /*
+    Add Vertex (Wrap InsertNewVertex)
+    */
+    ret_status add_vertex(type_t src_v_type, ide_t src_v_id, type_t p_type, std::string json_str) {
+        return insert_new_vertex(src_v_type, src_v_id, p_type, json_str);
+    }
 
     /*
     InsertNewVertex()
@@ -68,6 +74,20 @@ public:
         assert(s.ok());
         return ret_status::succeed;
     } 
+
+    /*
+    Add Edge (Wrap InsertNewVertex)
+    */
+    ret_status add_edge(type_t src_v_type,
+    ide_t src_v_id, type_t e_type, type_t dst_v_type, ide_t dst_v_id,  ide_t e_id, std::string json_str) {
+
+        ret_status s = insert_new_conn(src_v_type, src_v_id, e_type, dst_v_type, dst_v_id, e_id, json_str);
+        if (s != ret_status::succeed) {
+            return s;
+        }
+
+        return insert_new_edge(e_type, e_id, src_v_type, src_v_id, dst_v_type, dst_v_id);
+    }
 
     /*
     InsertNewConn()
@@ -125,7 +145,7 @@ public:
     Refer to the Set API in rocksdb
     */
     ret_status insert_new_edge(type_t e_type, ide_t e_id, type_t src_v_type,
-    ide_t src_v_id, type_t dst_v_type, ide_t dst_v_id,  std::string json_str) {
+    ide_t src_v_id, type_t dst_v_type, ide_t dst_v_id) {
         assert(db_ins != nullptr);
         
         edge_table_item *v_item = new edge_table_item(new edge_table_item_key(e_type, e_id), new edge_table_item_value(src_v_type, src_v_id, dst_v_type, dst_v_id));
@@ -182,8 +202,15 @@ public:
             seek_str.append(reinterpret_cast<char *>(&E_TYPE), sizeof(uint16_t));
             v_vec_str.emplace_back(seek_str);
         } 
+#ifdef USE_BENCH
+        auto begin = std::chrono::system_clock::now();
+#endif
         db_ins->explore_impl(v_vec_str, explore_edges);
-
+#ifdef USE_BENCH
+        auto end = std::chrono::system_clock::now();
+        std::chrono::duration<double> diff = end - begin;
+        std::cout << "DB Imple Time:" << diff.count() << std::endl;
+#endif   
         for (auto &explore_edge: explore_edges) {
             std::string key_str = explore_edge.first;
             // vertex_table_item_key *vertex_item_key = reinterpret_cast<vertex_table_item_key *>(key_str.c_str());
