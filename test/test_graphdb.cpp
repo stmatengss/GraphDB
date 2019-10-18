@@ -3,6 +3,7 @@
 #include <iostream>
 #include <vector>
 #include <chrono>
+#include <random>
 #include <algorithm>
 #include <gtest/gtest.h>
 
@@ -131,6 +132,90 @@ void test_wiki_vote() {
     remove_directory(db_path);
 }
 
+void test_web_NotreDame() {
+
+    std::string db_path("/tmp/db_web-NotreDame");
+    std::string file_path("/home/mateng/third_party/dataset/web-NotreDame-shuf.txt");
+
+    graphdb::graphdb_test db(db_path);
+    graphdb::simple_data_loader dl(file_path);
+
+    dl.fill_db_wo_weight<graphdb::graphdb_test>(db);
+
+    std::vector<uint64_t> in;
+    std::vector<uint64_t> out;
+    in.emplace_back(260697);
+
+	auto begin = std::chrono::system_clock::now();
+    db.explore_scan(in, out);
+	auto end = std::chrono::system_clock::now();
+
+    std::chrono::duration<double> diff = end - begin;
+    std::cout << "Time:" << diff.count() << std::endl;
+
+    EXPECT_EQ(out.size(), 156);
+
+    std::vector<uint64_t> in2{
+        291399 ,32559  ,233731 ,88529  ,25135  ,1698   ,42501  ,62830  ,260565 ,319339 ,260101 ,128090 ,228286 ,229641 ,231400 ,233574 ,234393 ,286118 ,306916 ,306678 ,260710 ,54520  ,258381 ,98780 
+    };
+
+    begin = std::chrono::system_clock::now();
+    db.explore_scan(in2, out);
+    end = std::chrono::system_clock::now();
+
+    diff = end - begin;
+    std::cout << "Time:" << diff.count() << std::endl;
+
+    std::sort(in2.begin(), in2.end());
+
+    begin = std::chrono::system_clock::now();
+    db.explore_scan(in2, out);
+    end = std::chrono::system_clock::now();
+
+    diff = end - begin;
+    std::cout << "Time:" << diff.count() << std::endl;
+
+    remove_directory(db_path);
+}
+
+void test_put_throughput() {
+    
+    // const int iter_num = 1000000;
+    const int ratio = 10;
+
+    std::string db_path("/tmp/db-put-throughput");
+    graphdb::graphdb_test db(db_path);
+
+    std::map<std::string, int> graph_scale_map = {
+        {"tiny", 1000},
+        {"small", 100000},
+        {"middle", 10000000}
+    };
+
+    int graph_scale = graph_scale_map["small"];
+    std::random_device rd;
+	std::mt19937 generate(rd());
+    // srand(time(NULL));
+
+    // for (int i = 0; i <= iter_num; i ++) 
+    int i;
+    int iter_num = graph_scale * ratio;
+
+	auto begin = std::chrono::system_clock::now();
+    while (i < iter_num) {
+        int src = generate() % graph_scale;
+        int dst = generate() % graph_scale;
+        if (src != dst) {
+            db.insert_edge_wo_proper(src, dst, i);
+            i++;
+        }
+    }
+	auto end = std::chrono::system_clock::now();
+
+    auto diff = end - begin;
+	std::cout << "Time:" << diff.count() << ", Counter:" << iter_num << ", IOPS:" << iter_num * 1000.0 / diff.count() << std::endl;
+}
+
 TEST(test_simple, test_simple) {
     test_simple();
 }
@@ -138,6 +223,15 @@ TEST(test_simple, test_simple) {
 TEST(test_wiki_vote, test_wiki_vote) {
     test_wiki_vote();
 }
+
+TEST(test_web_NotreDame, test_web_NotreDame) {
+    test_web_NotreDame();
+}
+
+TEST(test_put_throughput, test_put_throughput) {
+    test_put_throughput();
+}
+
 
 int main(int argc, char **argv)
 {
