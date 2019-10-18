@@ -234,7 +234,6 @@ public:
         if (src_v_filter != nullptr || edge_filter != nullptr) {
             return ret_status::error;
         }
-
         return ret_status::succeed;
     }
 

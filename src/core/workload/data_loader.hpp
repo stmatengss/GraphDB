@@ -7,9 +7,8 @@
 #include <functional>
 
 #include "storage/graphdb.hpp"
-
 namespace graphdb {
-
+    
 class data_loader
 {
 public:

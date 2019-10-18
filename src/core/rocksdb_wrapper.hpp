@@ -33,8 +33,7 @@ private:
             Iterator *it = db->NewIterator(option);
             it->Seek(std::string(reinterpret_cast<char *>(&src_v)));
             begin_pos_vec.emplace_back(it);
-        }    
-        return begin_pos_vec;
+        }
     }
 
     void multi_seek(std::vector<std::string> &src_v_vec_str, std::vector<Iterator *> &begin_pos_vec) {

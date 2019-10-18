@@ -4,4 +4,4 @@ CMakeCache.txt
 CMakeFiles/*
 .gdb_history
 cmake_install.cmake
-
+.vscode/
