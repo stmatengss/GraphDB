@@ -19,8 +19,6 @@ class rocksdb_wrapper
 {
 private:
     DB* db;
-    Options options;
-
     std::string db_path;
 
 private:
@@ -45,7 +43,7 @@ private:
 
             it->Seek(src_v_str);
             begin_pos_vec.emplace_back(it);
-        }    
+        } 
     }
 
 public:
@@ -53,15 +51,25 @@ public:
         create_db_if_not_exist(db_path_);
     }
 
-    ~rocksdb_wrapper() { }
+    rocksdb_wrapper(std::string db_path_,Options options): db_path(db_path_) { 
+        open_db(db_path_,options);
+    }
+    ~rocksdb_wrapper() {
+        close_db();
+    }
 
     void create_db_if_not_exist(std::string db_path) {
         // Optimize RocksDB. This is the easiest way to get RocksDB to perform well
+        Options options;
         options.IncreaseParallelism();
         options.OptimizeLevelStyleCompaction();
         // create the DB if it's not already present
         options.create_if_missing = true;
-            // open DB
+        // open DB
+        open_db(db_path,options);
+    }
+
+    void open_db(std::string db_path,Options options) {
         Status s = DB::Open(options, db_path, &db);
         assert(s.ok());
     }
@@ -110,6 +118,7 @@ public:
                 }
             }
             i ++;
+            delete it_res;
         }
         explore_edges_len.emplace_back(counter);
     }
@@ -147,6 +156,7 @@ public:
                 }
             }
             i ++;
+            delete it_res; //must be released
         }
     }
 

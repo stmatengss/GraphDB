@@ -35,7 +35,7 @@ public:
         std::ifstream input_file(file_path.c_str());
 
         if(!input_file){
-            printf("Input file not found!\n");
+            fprintf(stderr,"Input file %s not found!\n",file_path.c_str());
             exit(-1);
         } 
 

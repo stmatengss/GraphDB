@@ -38,26 +38,39 @@ public:
 };
 
 }
+std::string randString(int len){
+    std::random_device rd;
+    std::mt19937 generate(rd());
+    std::string str;
+    for(int i=0;i<len;i++){
+        if(generate()&1)
+            str.append(1,'0'+generate()%10);
+        else
+            str.append(1,'A'+generate()%26);
+    }
+    return str;
+}
+
 
 void test_simple() {
 
     std::string db_path("/tmp/db_data");
-    graphdb::graphdb_test db(db_path);
+    auto db=new graphdb::graphdb_test (db_path);
 
-    db.insert_edge_wo_proper(1, 2, 1);
-    db.insert_edge_wo_proper(2, 3, 2);
-    db.insert_edge_wo_proper(1, 4, 3);
-    db.insert_edge_wo_proper(1, 5, 4);
-    db.insert_edge_wo_proper(2, 6, 5);
-    db.insert_edge_wo_proper(3, 4, 6);
-    db.insert_edge_wo_proper(1, 6, 7);
+    db->insert_edge_wo_proper(1, 2, 1);
+    db->insert_edge_wo_proper(2, 3, 2);
+    db->insert_edge_wo_proper(1, 4, 3);
+    db->insert_edge_wo_proper(1, 5, 4);
+    db->insert_edge_wo_proper(2, 6, 5);
+    db->insert_edge_wo_proper(3, 4, 6);
+    db->insert_edge_wo_proper(1, 6, 7);
 
     std::vector<uint64_t> in;
     std::vector<uint64_t> out;
 
     in.emplace_back(1);
 
-    db.explore_scan(in, out);
+    db->explore_scan(in, out);
 
     // printf("Len: %lld\n", (long long)out.size());
     EXPECT_EQ(out.size(), 4);
@@ -71,7 +84,7 @@ void test_simple() {
 
     out.clear();
     in.emplace_back(2);
-    db.explore_scan(in, out);
+    db->explore_scan(in, out);
 
     // printf("Len: %lld\n", (long long)out.size());
     EXPECT_EQ(out.size(), 5);
@@ -82,10 +95,9 @@ void test_simple() {
         // printf("Key: %lld\n", (long long)i);
         EXPECT_EQ(i, result2[counter++]);
     }
-
+    delete db;
     remove_directory(db_path);
 }
-
 void test_wiki_vote() {
 
     std::string db_path("/tmp/db_data_wiki_vote");
@@ -178,42 +190,35 @@ void test_web_NotreDame() {
     remove_directory(db_path);
 }
 
-void test_put_throughput() {
-    
-    // const int iter_num = 1000000;
-    const int ratio = 10;
-
-    std::string db_path("/tmp/db-put-throughput");
-    graphdb::graphdb_test db(db_path);
-
-    std::map<std::string, int> graph_scale_map = {
-        {"tiny", 1000},
-        {"small", 100000},
-        {"middle", 10000000}
-    };
-
-    int graph_scale = graph_scale_map["small"];
+/**
+ * batch put vertex and edges randomly
+ * scale : num of vertices
+ * ratio : ratio of  num of edges to num of vertices
+ **/
+void batchRandPut(graphdb::graphdb_test* db,int scale,int ratio) {
     std::random_device rd;
 	std::mt19937 generate(rd());
     // srand(time(NULL));
-
     // for (int i = 0; i <= iter_num; i ++) 
-    int i;
-    int iter_num = graph_scale * ratio;
+    int i=0;
+    int iter_num = scale * ratio;
 
 	auto begin = std::chrono::system_clock::now();
     while (i < iter_num) {
-        int src = generate() % graph_scale;
-        int dst = generate() % graph_scale;
+        int src = generate() % scale;
+        int dst = generate() % scale;
         if (src != dst) {
-            db.insert_edge_wo_proper(src, dst, i);
+            db->insert_edge_wo_proper(src, dst, i);
             i++;
+        }
+        if(i%100000==0){
+            printf("loaded:%.2lf%%\n",100.0*i/iter_num);
         }
     }
 	auto end = std::chrono::system_clock::now();
 
-    auto diff = end - begin;
-	std::cout << "Time:" << diff.count() << ", Counter:" << iter_num << ", IOPS:" << iter_num * 1000.0 / diff.count() << std::endl;
+    std::chrono::duration<double> diff = end - begin;
+	std::cout << "Time:" << diff.count() << ", Counter:" << iter_num << ", IOPS:" << iter_num / diff.count() << std::endl;
 }
 
 TEST(test_simple, test_simple) {
@@ -227,16 +232,55 @@ TEST(test_wiki_vote, test_wiki_vote) {
 TEST(test_web_NotreDame, test_web_NotreDame) {
     test_web_NotreDame();
 }
-
-TEST(test_put_throughput, test_put_throughput) {
-    test_put_throughput();
+TEST(RandPut, Tiny) {
+    // const int iter_num = 1000000;
+    std::string db_path("/tmp/db-put-throughput"+randString(10));
+    auto db=new graphdb::graphdb_test(db_path);
+    printf("%s\n",db_path.c_str());
+    // std::map<std::string, int> graph_scale_map = {
+    //     {"tiny", 1000},
+    //     {"small", 100000},
+    //     {"middle", 10000000}
+    // };
+    // int graph_scale = graph_scale_map["small"];
+    batchRandPut(db,1000,10);
+    delete db;
+    remove_directory(db_path);
 }
 
+TEST(RandPut, Small) {
+    std::string db_path("/tmp/db-put-throughput"+randString(10));
+    auto db=new graphdb::graphdb_test(db_path);
+    printf("%s\n",db_path.c_str());
+    batchRandPut(db,100000,10);
+    delete db;
+    remove_directory(db_path);
+}
+
+// class CacheTest:public ::testing::Test
+// {
+// protected:
+//     void SetUp() override {
+//     }
+//     void TearDown() override {
+//     }
+// private:
+//     /* data */
+// public:
+// };
+
+// TEST_F(CacheTest, ClockCache) {
+//     test_put_throughput();
+// }
+// TEST_F(CacheTest, LRUCache) {
+//     test_put_throughput();
+// }
+// TEST_F(CacheTest, LRUCache) {
+//     test_put_throughput();
+// }
 
 int main(int argc, char **argv)
 {
-
     ::testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
-    return 0;
 }

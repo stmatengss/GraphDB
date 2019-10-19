@@ -24,6 +24,9 @@ public:
     graphdb(std::string db_path) { 
         db_ins = new rocksdb_wrapper(db_path);
     }
+    graphdb(std::string db_path,Options options) { 
+        db_ins = new rocksdb_wrapper(db_path,options);
+    }
     ~graphdb() { 
         delete db_ins;
     }
