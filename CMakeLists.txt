@@ -16,6 +16,7 @@ set(TEST_LIST
     test_simple
     test_strawman_join
     test_graphdb
+    test_dbcache
     )
 
 include_directories(

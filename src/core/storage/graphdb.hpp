@@ -24,7 +24,7 @@ public:
     graphdb(std::string db_path) { 
         db_ins = new rocksdb_wrapper(db_path);
     }
-    graphdb(std::string db_path,Options options) { 
+    graphdb(std::string db_path,Options& options) { 
         db_ins = new rocksdb_wrapper(db_path,options);
     }
     ~graphdb() { 
@@ -108,9 +108,9 @@ public:
     ide_t src_v_id, type_t e_type, type_t dst_v_type, ide_t dst_v_id,  ide_t e_id, std::string json_str) {
         assert(db_ins != nullptr);
         
-        conn_table_item *v_item = new conn_table_item(new conn_table_item_key(src_v_type, src_v_id, e_type, dst_v_type, dst_v_id, e_id), new conn_table_item_value(json_str));
-        insert_new_conn(v_item);
-
+        conn_table_item *conn_item = new conn_table_item(new conn_table_item_key(src_v_type, src_v_id, e_type, dst_v_type, dst_v_id, e_id), new conn_table_item_value(json_str));
+        insert_new_conn(conn_item);
+        delete conn_item;
         return ret_status::succeed;
     }
     
@@ -151,9 +151,9 @@ public:
     ide_t src_v_id, type_t dst_v_type, ide_t dst_v_id) {
         assert(db_ins != nullptr);
         
-        edge_table_item *v_item = new edge_table_item(new edge_table_item_key(e_type, e_id), new edge_table_item_value(src_v_type, src_v_id, dst_v_type, dst_v_id));
-        insert_new_edge(v_item);
-
+        edge_table_item *edge_item = new edge_table_item(new edge_table_item_key(e_type, e_id), new edge_table_item_value(src_v_type, src_v_id, dst_v_type, dst_v_id));
+        insert_new_edge(edge_item);
+        delete edge_item;
         return ret_status::succeed;
     }
     

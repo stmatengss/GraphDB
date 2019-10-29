@@ -51,7 +51,7 @@ public:
         create_db_if_not_exist(db_path_);
     }
 
-    rocksdb_wrapper(std::string db_path_,Options options): db_path(db_path_) { 
+    rocksdb_wrapper(std::string db_path_,Options& options): db_path(db_path_) { 
         open_db(db_path_,options);
     }
     ~rocksdb_wrapper() {
@@ -65,12 +65,19 @@ public:
         options.OptimizeLevelStyleCompaction();
         // create the DB if it's not already present
         options.create_if_missing = true;
+        BlockBasedTableOptions table_options;
+        table_options.no_block_cache = true;
+        options.table_factory.reset(NewBlockBasedTableFactory(table_options));
+
         // open DB
         open_db(db_path,options);
     }
 
-    void open_db(std::string db_path,Options options) {
+    void open_db(std::string db_path,Options& options) {
         Status s = DB::Open(options, db_path, &db);
+        if(!s.ok()){
+            fprintf(stderr,"%s %s\n",db_path.c_str(),s.getState());//debug
+        }
         assert(s.ok());
     }
 
@@ -102,6 +109,7 @@ public:
         for (auto &it_res: seek_res) {
             
             if (!it_res->Valid()) {
+                delete it_res;
                 continue;
             }
 
@@ -141,6 +149,7 @@ public:
         for (auto &it_res: seek_res) {       
 
             if (!it_res->Valid()) {
+                delete it_res; 
                 continue;
             }
 
@@ -149,7 +158,6 @@ public:
                 std::string val_str = it_res->value().ToString();
 
                 if (key_str.compare(0, v_vec_str[i].length(), v_vec_str[i]) == 0) {
-
                     explore_edges.emplace_back(make_pair(key_str, val_str));
                 } else {
                     break;

@@ -89,6 +89,10 @@ struct vertex_table_item
     vertex_table_item_value *value;
     vertex_table_item(vertex_table_item_key *key_,
         vertex_table_item_value *value_): key(key_), value(value_) {}
+    ~vertex_table_item(){
+        delete key;
+        delete value;
+    }
 };
 
 /* Conn Table */
@@ -118,6 +122,10 @@ struct conn_table_item
     conn_table_item_value *value;
     conn_table_item(conn_table_item_key *key_,
         conn_table_item_value *value_): key(key_), value(value_) {}
+    ~conn_table_item(){
+        delete key;
+        delete value;
+    }
 };
 
 const int dst_v_id_offset = offsetof(conn_table_item_key, dst_v_id);
@@ -147,6 +155,10 @@ struct edge_table_item
     edge_table_item_key *key;
     edge_table_item_value *value;
     edge_table_item(edge_table_item_key *key_, edge_table_item_value *value_): key(key_), value(value_) {}
+    ~edge_table_item(){
+        delete key;
+        delete value;
+    }
 };
 
 template<typename T>

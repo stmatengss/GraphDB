@@ -6,8 +6,8 @@
 #include <random>
 #include <algorithm>
 #include <gtest/gtest.h>
-
-// #include "storage/graph_schema.hpp"
+#include "rocksdb/table.h"
+#include "rocksdb/cache.h"
 #include "storage/graphdb.hpp"
 #include "tool/filesystem.hpp"
 #include "workload/data_loader.hpp"
@@ -19,6 +19,8 @@ class graphdb_test: public graphdb {
 
 public:
     graphdb_test(std::string db_path): graphdb(db_path) { 
+    }
+    graphdb_test(std::string db_path,Options& options): graphdb(db_path,options) { 
     }
     ~graphdb_test() { 
     }
@@ -191,7 +193,7 @@ void test_web_NotreDame() {
 }
 
 /**
- * batch put vertex and edges randomly
+ * batch put vertices and edges randomly
  * scale : num of vertices
  * ratio : ratio of  num of edges to num of vertices
  **/
@@ -257,27 +259,63 @@ TEST(RandPut, Small) {
     remove_directory(db_path);
 }
 
-// class CacheTest:public ::testing::Test
-// {
-// protected:
-//     void SetUp() override {
-//     }
-//     void TearDown() override {
-//     }
-// private:
-//     /* data */
-// public:
-// };
+class CacheTest: public ::testing::Test
+{
+public:
+protected:
+    graphdb::graphdb_test* db;
+    std::string db_path;
+    std::vector<uint64_t> vertexs;
+    void SetUp() {
+        fprintf(stderr,"initDb\n");
+        db_path="/tmp/dbCacheTest"+randString(10);
+        db=new graphdb::graphdb_test(db_path);
+        fprintf(stderr,"%s\n",db_path.c_str());
+        int scale=50000;
+        batchRandPut(db,scale,10);
+        for(int i=0;i<scale;i++){
+            vertexs.push_back(i);
+        }
+    }
+    void TearDown() {
+        delete db;
+        remove_directory(db_path);
+    }
+    void ReOpen(Options& options){
+        delete db;
+        db=new graphdb::graphdb_test(db_path,options);
+    }
+private:
+};
 
 // TEST_F(CacheTest, ClockCache) {
-//     test_put_throughput();
 // }
-// TEST_F(CacheTest, LRUCache) {
-//     test_put_throughput();
-// }
-// TEST_F(CacheTest, LRUCache) {
-//     test_put_throughput();
-// }
+TEST_F(CacheTest, LRUCache) {
+    Options options;
+    options.IncreaseParallelism();
+    options.OptimizeLevelStyleCompaction();
+    std::shared_ptr<Cache> cache = NewLRUCache(8<<20);//8M
+    BlockBasedTableOptions table_options;
+    table_options.block_cache = cache;
+    options.table_factory.reset(NewBlockBasedTableFactory(table_options));
+    ReOpen(options);
+    std::vector<uint64_t> out;
+    db->explore_scan(vertexs, out);
+    printf("%d\n",out.size());
+}
+
+TEST_F(CacheTest, NoCache) {
+    Options options;
+    options.IncreaseParallelism();
+    options.OptimizeLevelStyleCompaction();
+    BlockBasedTableOptions table_options;
+    table_options.no_block_cache = true;
+    options.table_factory.reset(NewBlockBasedTableFactory(table_options));
+    ReOpen(options);
+    std::vector<uint64_t> out;
+    db->explore_scan(vertexs, out);
+    printf("%d\n",out.size());
+}
 
 int main(int argc, char **argv)
 {

@@ -56,17 +56,6 @@ CMAKE_BINARY_DIR = /home/lanvent/projects/GraphDB
 #=============================================================================
 # Targets provided globally by CMake.
 
-# Special rule for the target rebuild_cache
-rebuild_cache:
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Running CMake to regenerate build system..."
-	/usr/bin/cmake -H$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR)
-.PHONY : rebuild_cache
-
-# Special rule for the target rebuild_cache
-rebuild_cache/fast: rebuild_cache
-
-.PHONY : rebuild_cache/fast
-
 # Special rule for the target edit_cache
 edit_cache:
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "No interactive CMake dialog available..."
@@ -77,6 +66,17 @@ edit_cache:
 edit_cache/fast: edit_cache
 
 .PHONY : edit_cache/fast
+
+# Special rule for the target rebuild_cache
+rebuild_cache:
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Running CMake to regenerate build system..."
+	/usr/bin/cmake -H$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR)
+.PHONY : rebuild_cache
+
+# Special rule for the target rebuild_cache
+rebuild_cache/fast: rebuild_cache
+
+.PHONY : rebuild_cache/fast
 
 # The main all target
 all: cmake_check_build_system
@@ -175,6 +175,19 @@ test_graphdb/fast:
 	$(MAKE) -f CMakeFiles/test_graphdb.dir/build.make CMakeFiles/test_graphdb.dir/build
 .PHONY : test_graphdb/fast
 
+#=============================================================================
+# Target rules for targets named test_dbcache
+
+# Build rule for target.
+test_dbcache: cmake_check_build_system
+	$(MAKE) -f CMakeFiles/Makefile2 test_dbcache
+.PHONY : test_dbcache
+
+# fast build rule for target.
+test_dbcache/fast:
+	$(MAKE) -f CMakeFiles/test_dbcache.dir/build.make CMakeFiles/test_dbcache.dir/build
+.PHONY : test_dbcache/fast
+
 micro-test/test_multiget.o: micro-test/test_multiget.cpp.o
 
 .PHONY : micro-test/test_multiget.o
@@ -228,6 +241,33 @@ micro-test/test_tailing.s: micro-test/test_tailing.cpp.s
 micro-test/test_tailing.cpp.s:
 	$(MAKE) -f CMakeFiles/test_tailing.dir/build.make CMakeFiles/test_tailing.dir/micro-test/test_tailing.cpp.s
 .PHONY : micro-test/test_tailing.cpp.s
+
+test/test_dbcache.o: test/test_dbcache.cpp.o
+
+.PHONY : test/test_dbcache.o
+
+# target to build an object file
+test/test_dbcache.cpp.o:
+	$(MAKE) -f CMakeFiles/test_dbcache.dir/build.make CMakeFiles/test_dbcache.dir/test/test_dbcache.cpp.o
+.PHONY : test/test_dbcache.cpp.o
+
+test/test_dbcache.i: test/test_dbcache.cpp.i
+
+.PHONY : test/test_dbcache.i
+
+# target to preprocess a source file
+test/test_dbcache.cpp.i:
+	$(MAKE) -f CMakeFiles/test_dbcache.dir/build.make CMakeFiles/test_dbcache.dir/test/test_dbcache.cpp.i
+.PHONY : test/test_dbcache.cpp.i
+
+test/test_dbcache.s: test/test_dbcache.cpp.s
+
+.PHONY : test/test_dbcache.s
+
+# target to generate assembly for a file
+test/test_dbcache.cpp.s:
+	$(MAKE) -f CMakeFiles/test_dbcache.dir/build.make CMakeFiles/test_dbcache.dir/test/test_dbcache.cpp.s
+.PHONY : test/test_dbcache.cpp.s
 
 test/test_graphdb.o: test/test_graphdb.cpp.o
 
@@ -316,19 +356,23 @@ help:
 	@echo "... all (the default if no target is provided)"
 	@echo "... clean"
 	@echo "... depend"
+	@echo "... edit_cache"
 	@echo "... test_tailing"
 	@echo "... test_multiget"
 	@echo "... rebuild_cache"
 	@echo "... test_simple"
 	@echo "... test_strawman_join"
 	@echo "... test_graphdb"
-	@echo "... edit_cache"
+	@echo "... test_dbcache"
 	@echo "... micro-test/test_multiget.o"
 	@echo "... micro-test/test_multiget.i"
 	@echo "... micro-test/test_multiget.s"
 	@echo "... micro-test/test_tailing.o"
 	@echo "... micro-test/test_tailing.i"
 	@echo "... micro-test/test_tailing.s"
+	@echo "... test/test_dbcache.o"
+	@echo "... test/test_dbcache.i"
+	@echo "... test/test_dbcache.s"
 	@echo "... test/test_graphdb.o"
 	@echo "... test/test_graphdb.i"
 	@echo "... test/test_graphdb.s"
