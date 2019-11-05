@@ -82,6 +82,7 @@ public:
     }
 
     void close_db() {
+        db->Close();
         delete db;
     }
 
