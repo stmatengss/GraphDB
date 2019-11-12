@@ -9,6 +9,7 @@
 #include "core/common.h"
 #include "core/rocksdb_wrapper.hpp"
 #include "core/storage/graph_schema.hpp"
+#include "core/storage/graphdb_algorithm.hpp"
 
 namespace graphdb 
 {
@@ -177,6 +178,53 @@ public:
     }
 
     /*
+    GetMaxVertex()
+    Input:
+    Ouput:
+    1. Max Vertex ID
+    */
+    vertex_t get_max_vertex() {
+
+        assert(db_ins != nullptr);
+
+        std::string seek_str;
+        seek_str.append(reinterpret_cast<const char *>(&MIN_E_TYPE), sizeof(type_t));
+
+        std::string res_str = db_ins->seek_to_last_key(seek_str);
+
+        vertex_t res;
+        std::memcpy(reinterpret_cast<char *>(&res), res_str.c_str(), sizeof(vertex_t));
+
+        return res;
+    }
+
+    ide_t get_max_vertex_id() {
+        return get_max_vertex().src_id;
+    }
+
+    /*
+    GetMaxEdge()
+    Input:
+    Ouput:
+    1. Max Vertex ID
+    */
+    edge_t get_max_edge() {
+
+        assert(db_ins != nullptr);
+
+        std::string res_str = db_ins->seek_to_final_last_key();
+
+        edge_t res;
+        std::memcpy(reinterpret_cast<char *>(&res), res_str.c_str(), sizeof(edge_t));
+
+        return res;
+    }
+
+    ide_t get_max_edge_id() {
+        return get_max_edge().edge_id;
+    }
+
+    /*
     ExploreScan()
     Input:
     1:Required: an ordered list of source vertex list
@@ -193,9 +241,12 @@ public:
 
     ret_status explore_scan(std::vector<ide_t> &v_vec_sorted, 
                     std::vector<ide_t> &dst_v_vec_out) {
-        
+
+#ifdef USE_BENCH
+        auto begin_all = std::chrono::system_clock::now();
+#endif
         std::vector<std::pair<std::string, std::string>> explore_edges;
-        std::set<ide_t> dst_v_set;
+        std::vector<int> explore_edges_len;
 
         std::vector<std::string> v_vec_str;
         for (uint64_t &src_v: v_vec_sorted) {
@@ -208,21 +259,20 @@ public:
 #ifdef USE_BENCH
         auto begin = std::chrono::system_clock::now();
 #endif
-        db_ins->explore_impl(v_vec_str, explore_edges);
+        db_ins->explore_impl(v_vec_str, explore_edges, explore_edges_len);
 #ifdef USE_BENCH
         auto end = std::chrono::system_clock::now();
         std::chrono::duration<double> diff = end - begin;
         std::cout << "DB Imple Time:" << diff.count() << std::endl;
-#endif   
-        for (auto &explore_edge: explore_edges) {
-            std::string key_str = explore_edge.first;
-            // vertex_table_item_key *vertex_item_key = reinterpret_cast<vertex_table_item_key *>(key_str.c_str());
-            ide_t dst_v = *((ide_t *)(key_str.c_str() + dst_v_id_offset));
-            dst_v_set.insert(dst_v);
-        }
-        // TODO: K-way Merge Sort
-        dst_v_vec_out = std::vector<ide_t>(dst_v_set.begin(), dst_v_set.end()); 
+#endif
 
+        k_way_merge_sort(explore_edges, explore_edges_len, dst_v_vec_out);
+
+#ifdef USE_BENCH
+        auto end_all = std::chrono::system_clock::now();
+        std::chrono::duration<double> diff_all = end_all - begin_all;
+        std::cout << "Explore Time:" << diff_all.count() << std::endl;
+#endif   
         return ret_status::succeed;
     }
 
@@ -233,6 +283,8 @@ public:
                     std::vector<vertex_t> &src_v_vec_out,
                     bool ouput_dst_vec,
                     std::vector<vertex_t> &dst_v_vec_out) {
+
+        // TODO
 
         if (src_v_filter != nullptr || edge_filter != nullptr) {
             return ret_status::error;

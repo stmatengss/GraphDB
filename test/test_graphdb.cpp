@@ -37,6 +37,10 @@ public:
         insert_conn_table_wo_proper(src, dst, edge);
         insert_edge_table_wo_proper(src, dst, edge);
     }
+
+    void insert_vertex_wo_proper(ide_t src) {
+        insert_new_vertex(V_TYPE, src, P_TYPE, "");
+    }
 };
 
 }
@@ -66,6 +70,15 @@ void test_simple() {
     db->insert_edge_wo_proper(2, 6, 5);
     db->insert_edge_wo_proper(3, 4, 6);
     db->insert_edge_wo_proper(1, 6, 7);
+
+    db->insert_vertex_wo_proper(1);
+    db->insert_vertex_wo_proper(2);
+    db->insert_vertex_wo_proper(3);
+    db->insert_vertex_wo_proper(4);
+    db->insert_vertex_wo_proper(5);
+    db->insert_vertex_wo_proper(6);
+    db->insert_vertex_wo_proper(7);
+
 
     std::vector<uint64_t> in;
     std::vector<uint64_t> out;
@@ -97,6 +110,13 @@ void test_simple() {
         // printf("Key: %lld\n", (long long)i);
         EXPECT_EQ(i, result2[counter++]);
     }
+
+    EXPECT_EQ(reinterpret_cast<uint64_t>(db->get_max_edge().edge_id), 7ULL);
+    EXPECT_EQ(reinterpret_cast<uint16_t>(db->get_max_edge().edge_type), E_TYPE);
+
+    EXPECT_EQ(reinterpret_cast<uint64_t>(db->get_max_vertex().src_id), 7ULL);
+    EXPECT_EQ(reinterpret_cast<uint16_t>(db->get_max_vertex().src_type), V_TYPE);
+
     delete db;
     remove_directory(db_path);
 }
