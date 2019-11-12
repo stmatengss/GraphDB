@@ -103,7 +103,7 @@ void test_simple() {
 void test_wiki_vote() {
 
     std::string db_path("/tmp/db_data_wiki_vote");
-    std::string file_path("/home/lanvent/data/wiki-Vote.txt");
+    std::string file_path("/home/mateng/third_party/dataset/wiki-Vote-shuf.txt");
 
     graphdb::graphdb_test db(db_path);
     graphdb::simple_data_loader dl(file_path);
@@ -149,7 +149,7 @@ void test_wiki_vote() {
 void test_web_NotreDame() {
 
     std::string db_path("/tmp/db_web-NotreDame");
-    std::string file_path("/home/lanvent/data/web-NotreDame.txt");
+    std::string file_path("/home/mateng/third_party/dataset/web-NotreDame-shuf.txt");
 
     graphdb::graphdb_test db(db_path);
     graphdb::simple_data_loader dl(file_path);

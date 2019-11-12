@@ -39,7 +39,7 @@ set(mylib
     pthread
     dl
     gtest
-    lz4
+    # lz4
     zstd)
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY bin/micro-test/)
