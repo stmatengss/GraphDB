@@ -6,6 +6,7 @@
 #include <random>
 #include <algorithm>
 #include <gtest/gtest.h>
+// #include <gmock/gmock.h>
 #include "rocksdb/table.h"
 #include "rocksdb/cache.h"
 #include "storage/graphdb.hpp"
@@ -25,7 +26,7 @@ public:
     ~graphdb_test() { 
     }
 
-    void insert_conn_table_wo_proper(ide_t src, ide_t dst, ide_t edge) {
+    void insert_conn_table_wo_proper(uint64_t src, ide_t dst, ide_t edge) {
         insert_new_conn(V_TYPE, src, E_TYPE, V_TYPE, dst, edge, "");
     }
 
@@ -117,9 +118,28 @@ void test_simple() {
     EXPECT_EQ(reinterpret_cast<uint64_t>(db->get_max_vertex().src_id), 7ULL);
     EXPECT_EQ(reinterpret_cast<uint16_t>(db->get_max_vertex().src_type), V_TYPE);
 
+    db->insert_edge_wo_proper(6, 7, 8);
+    db->insert_edge_wo_proper(2, 9, 9);
+    db->insert_edge_wo_proper(3, 8, 10);
+    db->insert_edge_wo_proper(8, 9, 11);
+    db->insert_edge_wo_proper(8, 10, 12);
+
+    std::vector<uint64_t> res;
+    std::vector<uint64_t> true_res{3, 7, 9};
+    long long total_counter;
+    db->bfs(std::vector<uint64_t>{1}, 2, res, total_counter);
+
+    // EXPECT_THAT(res, ::testing::ContainerEq(true_res)); //FIXME
+    counter = 0;
+    for_each(res.begin(), res.end(), [&](uint64_t &x){
+        // printf("%ld\n", (long)x);
+        EXPECT_EQ(true_res[counter ++], x);
+    });
+
     delete db;
     remove_directory(db_path);
 }
+
 void test_wiki_vote() {
 
     std::string db_path("/tmp/db_data_wiki_vote");
@@ -161,6 +181,17 @@ void test_wiki_vote() {
     end = std::chrono::system_clock::now();
 
     diff = end - begin;
+    std::cout << "Time:" << diff.count() << std::endl;
+    
+    std::vector<uint64_t> in3{8010};
+    long long total_counter;
+
+    begin = std::chrono::system_clock::now();
+    db.bfs(in3, -1, out, total_counter);
+    end = std::chrono::system_clock::now();
+
+    diff = end - begin;
+    std::cout << "Total Counter:" << total_counter << std::endl;
     std::cout << "Time:" << diff.count() << std::endl;
 
     remove_directory(db_path);
@@ -208,6 +239,9 @@ void test_web_NotreDame() {
 
     diff = end - begin;
     std::cout << "Time:" << diff.count() << std::endl;
+
+    // EXPECT_EQ(reinterpret_cast<uint64_t>(db.get_max_vertex().src_id), 325728ULL);
+    // EXPECT_EQ(reinterpret_cast<uint64_t>(db.get_max_edge().edge_id), 1497133ULL);
 
     remove_directory(db_path);
 }
@@ -321,7 +355,7 @@ TEST_F(CacheTest, LRUCache) {
     ReOpen(options);
     std::vector<uint64_t> out;
     db->explore_scan(vertexs, out);
-    printf("%d\n",out.size());
+    printf("%d\n", (int)out.size());
 }
 
 TEST_F(CacheTest, NoCache) {
@@ -334,7 +368,7 @@ TEST_F(CacheTest, NoCache) {
     ReOpen(options);
     std::vector<uint64_t> out;
     db->explore_scan(vertexs, out);
-    printf("%d\n",out.size());
+    printf("%d\n", (int)out.size());
 }
 
 int main(int argc, char **argv)

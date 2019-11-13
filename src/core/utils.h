@@ -85,11 +85,6 @@ void GREENLOG(const char *format, ...)
     va_end( args );
 }
 
-// static inline uint32_t hrd_fastrand(uint64_t* seed) {
-//   *seed = *seed * 1103515245 + 12345;
-//   return (uint32_t)(*seed >> 32);
-// }
-
 static inline uint32_t hrd_fastrand() {
   uint64_t seed = rand() * 1103515245 + 12345;
   return (uint32_t)(seed >> 32);
@@ -112,7 +107,7 @@ forceinline void PRINT_BINARY_CHAR(char num) {
 #define unlikely(x)     __builtin_expect(!!(x), 0)
 #define cacheline       __attribute__((aligned(64)))
 #define _unused(x)      ((void)(x))
-#define is_aligned(x, A)        (((uint64_t) x) % A == 0)
+#define IS_ALIGNED(x, A)        (((uint64_t) x) % A == 0)
 #define LOG(...)        fprintf(stdout, __VA_ARGS__)
 // #define LOG(...) do{}while(0);
 #define ERR(...)        fprintf(stderr, __VA_ARGS__)

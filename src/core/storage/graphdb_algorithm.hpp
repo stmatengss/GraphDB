@@ -1,5 +1,5 @@
-#if !defined(GRAPHDB_ALGORITHM_)
-#define GRAPHDB_ALGORITHM_
+#if !defined(GRAPHDB_ALGORITHM_HPP_)
+#define GRAPHDB_ALGORITHM_HPP_
 
 #include <vector>
 #include <string>

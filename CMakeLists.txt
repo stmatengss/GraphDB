@@ -39,6 +39,8 @@ set(mylib
     pthread
     dl
     gtest
+    gtest_main
+    tbb
     # lz4
     zstd)
 

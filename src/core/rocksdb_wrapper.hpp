@@ -14,6 +14,7 @@ using namespace rocksdb;
 using db_status = Status;
 
 #define USE_BENCH
+// #define USE_PREFIX
 // #define USE_UPPER_BOUND //TODO FIXME
 
 class rocksdb_wrapper
@@ -80,6 +81,10 @@ public:
     }
 
     void open_db(std::string db_path,Options& options) {
+
+#ifdef USE_PREFIX_SEEK
+        options.prefix_extractor.reset(NewFixedPrefixTransform(10));
+#endif
         Status s = DB::Open(options, db_path, &db);
         if(!s.ok()){
             fprintf(stderr,"%s %s\n",db_path.c_str(),s.getState());//debug

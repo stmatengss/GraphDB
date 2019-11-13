@@ -5,11 +5,13 @@
 #include <set>
 #include <chrono>
 #include <functional>
+#include <climits>
 
 #include "core/common.h"
 #include "core/rocksdb_wrapper.hpp"
 #include "core/storage/graph_schema.hpp"
 #include "core/storage/graphdb_algorithm.hpp"
+#include "core/storage/hashmap.hpp"
 
 namespace graphdb 
 {
@@ -19,17 +21,60 @@ class graphdb
 private:
     rocksdb_wrapper *db_ins;
 
+    hash_map *hm_ins;
     // meta-data
 
 public:
     graphdb(std::string db_path) { 
         db_ins = new rocksdb_wrapper(db_path);
+        hm_ins = new hash_map();
     }
     graphdb(std::string db_path,Options& options) { 
         db_ins = new rocksdb_wrapper(db_path,options);
+        hm_ins = new hash_map();
     }
     ~graphdb() { 
         delete db_ins;
+    }
+
+    /*
+    FilterActive()
+    Input:
+    1. Required: Source Vertex ID Vector
+    Output:
+    1. Requir=
+    */
+    ret_status filter_active(std::vector<ide_t> &vec_sorted, std::vector<ide_t> &vec_sorted_out) {
+
+        vec_sorted_out.clear();
+
+        for_each(vec_sorted.begin(), vec_sorted.end(), [&](ide_t &v_t){
+
+            if (!hm_ins->get_bit(v_t)) {
+
+                hm_ins->set_bit(v_t, true);
+                vec_sorted_out.emplace_back(v_t);
+            }
+        });
+
+        return ret_status::succeed;
+    }
+
+    ret_status filter_active(std::vector<vertex_t> &vec_sorted, std::vector<vertex_t> &vec_sorted_out) {
+
+        vec_sorted_out.clear();
+
+        for_each(vec_sorted.begin(), vec_sorted.end(), [&](vertex_t &v_t){
+
+            ide_t v_id = v_t.src_id;
+            if (!hm_ins->get_bit(v_id)) {
+
+                hm_ins->set_bit(v_id, true);
+                vec_sorted_out.emplace_back(v_t);
+            }
+        });
+
+        return ret_status::succeed;
     }
     
     /*
@@ -305,9 +350,39 @@ public:
     based on ExploreScan()
     can be down in only a few (the same number as the depth of BFS) passes of the data
     */
-    ret_status bfs(ide_t v_in,
+    ret_status bfs(std::vector<ide_t> vec_sorted,
             int bfs_total_times,
-            std::vector<ide_t> &v_out) {
+            std::vector<ide_t> &v_out, long long &total_counter) {
+        
+        hm_ins->clear();
+        total_counter = 0;
+        std::vector<ide_t> res_vec_sorted;
+
+        int tmp_bfs_total_times = (bfs_total_times == -1 ? INT_MAX : bfs_total_times);
+
+        for (int i = 0; i < tmp_bfs_total_times; i ++ ) {
+
+            // for_each(vec_sorted.begin(), vec_sorted.end(), [](ide_t v){
+            //     printf("||%d\n", (long)v);
+            // });
+            total_counter += vec_sorted.size();
+
+            explore_scan(vec_sorted, res_vec_sorted);    
+
+            // for_each(res_vec_sorted.begin(), res_vec_sorted.end(), [](ide_t v){
+            //     printf("<>%d\n", (long)v);
+            // });
+
+            // vec_sorted.clear();
+            filter_active(res_vec_sorted, vec_sorted);
+
+            if (bfs_total_times == -1 && vec_sorted.size() == 0) {
+
+                return ret_status::succeed;                
+            }
+        }
+
+        v_out.swap(vec_sorted);
             
         return ret_status::succeed;
     }
@@ -315,7 +390,7 @@ public:
     ret_status bfs(vertex_t v_in,
             int bfs_total_times,
             std::vector<vertex_t> &v_out) {
-            
+
         return ret_status::succeed;
     }
 
